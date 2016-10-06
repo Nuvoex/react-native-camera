@@ -17,6 +17,7 @@ import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 import android.view.Surface;
@@ -38,6 +39,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -60,6 +63,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
     public static final int RCT_CAMERA_CAPTURE_TARGET_DISK = 1;
     public static final int RCT_CAMERA_CAPTURE_TARGET_CAMERA_ROLL = 2;
     public static final int RCT_CAMERA_CAPTURE_TARGET_TEMP = 3;
+    public static final int RCT_CAMERA_CAPTURE_TARGET_CUSTOM = 4;
     public static final int RCT_CAMERA_ORIENTATION_AUTO = Integer.MAX_VALUE;
     public static final int RCT_CAMERA_ORIENTATION_PORTRAIT = Surface.ROTATION_0;
     public static final int RCT_CAMERA_ORIENTATION_PORTRAIT_UPSIDE_DOWN = Surface.ROTATION_180;
@@ -184,6 +188,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                         put("disk", RCT_CAMERA_CAPTURE_TARGET_DISK);
                         put("cameraRoll", RCT_CAMERA_CAPTURE_TARGET_CAMERA_ROLL);
                         put("temp", RCT_CAMERA_CAPTURE_TARGET_TEMP);
+                        put("custom", RCT_CAMERA_CAPTURE_TARGET_CUSTOM);
                     }
                 });
             }
@@ -254,6 +259,9 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                 break;
             case RCT_CAMERA_CAPTURE_TARGET_TEMP:
                 mVideoFile = getTempMediaFile(MEDIA_TYPE_VIDEO);
+                break;
+            case RCT_CAMERA_CAPTURE_TARGET_CUSTOM:
+                mVideoFile = getCustomMediaFile(MEDIA_TYPE_VIDEO, options.getString("saveFilePath"), options.getString("fileName"));
                 break;
             default:
             case RCT_CAMERA_CAPTURE_TARGET_DISK:
@@ -386,6 +394,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                 break;
             case RCT_CAMERA_CAPTURE_TARGET_TEMP:
             case RCT_CAMERA_CAPTURE_TARGET_DISK:
+            case RCT_CAMERA_CAPTURE_TARGET_CUSTOM:
                 response.putString("path", Uri.fromFile(mVideoFile).toString());
                 mRecordingPromise.resolve(response);
         }
@@ -457,6 +466,25 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    @ReactMethod
+    public void delete(final ReadableMap options, final Promise promise) {
+        if (!options.hasKey("saveFilePath")) {
+            promise.reject("No path found");
+            return;
+        }
+        try {
+            URI path = new URI(options.getString("saveFilePath"));
+            File file = new File(path);
+            if (file.delete()) {
+                promise.resolve("File deleted successfully");
+                return;
+            }
+            promise.reject("File not deleted");
+        } catch (URISyntaxException e) {
+            promise.reject("Malformed path");
         }
     }
 
@@ -577,6 +605,22 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                         promise.resolve(response);
                         break;
                     }
+                    case RCT_CAMERA_CAPTURE_TARGET_CUSTOM: {
+                        File customFile = getCustomMediaFile(MEDIA_TYPE_IMAGE, options.getString("saveFilePath"), options.getString("fileName"));
+                        if (customFile == null) {
+                            promise.reject("Error creating media file.");
+                            return;
+                        }
+
+                        Throwable error = writeDataToFile(data, customFile);
+                        if (error != null) {
+                            promise.reject(error);
+                        }
+
+                        response.putString("path", Uri.fromFile(customFile).toString());
+                        promise.resolve(response);
+                        break;
+                    }
                 }
             }
         });
@@ -631,7 +675,21 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
         );
     }
 
+    private File getCustomMediaFile(int type, String saveFilePath, String fileName) {
+        String root = Environment.getExternalStorageDirectory().toString();
+        File storageDir = new File(root + "/" + saveFilePath);
+        return getOutputFile(
+                type,
+                storageDir,
+                fileName
+        );
+    }
+
     private File getOutputFile(int type, File storageDir) {
+        return getOutputFile(type, storageDir, null);
+    }
+
+    private File getOutputFile(int type, File storageDir, String fileName) {
         // Create the storage directory if it does not exist
         if (!storageDir.exists()) {
             if (!storageDir.mkdirs()) {
@@ -640,16 +698,28 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
             }
         }
 
-        // Create a media file name
-        String photoName = String.format("%s", new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()));
-
-        if (type == MEDIA_TYPE_IMAGE) {
-            photoName = String.format("IMG_%s.jpg", photoName);
-        } else if (type == MEDIA_TYPE_VIDEO) {
-            photoName = String.format("VID_%s.mp4", photoName);
+        String photoName = fileName;
+        if (!TextUtils.isEmpty(photoName)) {
+            if (type == MEDIA_TYPE_IMAGE) {
+                photoName = String.format("%s.jpg", photoName);
+            } else if (type == MEDIA_TYPE_VIDEO) {
+                photoName = String.format("%s.mp4", photoName);
+            } else {
+                Log.e(TAG, "Unsupported media type:" + type);
+                return null;
+            }
         } else {
-            Log.e(TAG, "Unsupported media type:" + type);
-            return null;
+            // Create a media file name
+            photoName = String.format("%s", new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()));
+
+            if (type == MEDIA_TYPE_IMAGE) {
+                photoName = String.format("IMG_%s.jpg", photoName);
+            } else if (type == MEDIA_TYPE_VIDEO) {
+                photoName = String.format("VID_%s.mp4", photoName);
+            } else {
+                Log.e(TAG, "Unsupported media type:" + type);
+                return null;
+            }
         }
 
         return new File(String.format("%s%s%s", storageDir.getPath(), File.separator, photoName));
