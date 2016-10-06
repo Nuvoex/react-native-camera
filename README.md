@@ -144,9 +144,9 @@ The type of capture that will be performed by the camera - either a still image 
 
 #### `captureTarget`
 
-Values: `Camera.constants.CaptureTarget.cameraRoll` (ios only default), `Camera.constants.CaptureTarget.disk` (android default), `Camera.constants.CaptureTarget.temp`, ~~`Camera.constants.CaptureTarget.memory`~~ (deprecated),
+Values: `Camera.constants.CaptureTarget.cameraRoll` (default), `Camera.constants.CaptureTarget.disk`, `Camera.constants.CaptureTarget.temp`, `Camera.constants.CaptureTarget.custom`, ~~`Camera.constants.CaptureTarget.memory`~~ (deprecated),
 
-This property allows you to specify the target output of the captured image data. By default the image binary is sent back as a base 64 encoded string. The disk output has been shown to improve capture response time, so that is the recommended value.
+This property allows you to specify the target output of the captured image data. By default the image binary is sent back as a base 64 encoded string. The disk output has been shown to improve capture response time, so that is the recommended value. For custom target the directory path and filename must be specified in capture method.
 
 #### `captureQuality`
 
@@ -260,6 +260,8 @@ Supported options:
  - `audio` (See `captureAudio` under Properties)
  - `mode` (See  `captureMode` under Properties)
  - `target` (See `captureTarget` under Properties)
+ - `saveFilePath` Directory path where image file must be stored for custom target (android only)
+ - `fileName` Filename of saved image for custom target (android only)
  - `metadata` This is metadata to be added to the captured image.
    - `location` This is the object returned from `navigator.geolocation.getCurrentPosition()` (React Native's geolocation polyfill). It will add GPS metadata to the image.
  - `rotation` This will rotate the image by the number of degrees specified.
