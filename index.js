@@ -202,6 +202,10 @@ export default class Camera extends Component {
     }
   };
 
+  delete(options) {
+    return CameraManager.delete(options);
+  }
+
   capture(options) {
     const props = convertNativeProps(this.props);
     options = {
