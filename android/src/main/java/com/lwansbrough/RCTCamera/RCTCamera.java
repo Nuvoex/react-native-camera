@@ -171,6 +171,10 @@ public class RCTCamera {
     }
 
     public void setCaptureQuality(int cameraType, String captureQuality) {
+        setCaptureQuality(cameraType, captureQuality, Integer.MAX_VALUE, Integer.MAX_VALUE);
+    }
+
+    public void setCaptureQuality(int cameraType, String captureQuality, int maxWidth, int maxHeight) {
         Camera camera = _cameras.get(cameraType);
         if (camera == null) {
             return;
@@ -188,6 +192,9 @@ public class RCTCamera {
                 break;
             case RCTCameraModule.RCT_CAMERA_CAPTURE_QUALITY_HIGH:
                 pictureSize = getBestSize(parameters.getSupportedPictureSizes(), Integer.MAX_VALUE, Integer.MAX_VALUE);
+                break;
+            case RCTCameraModule.RCT_CAMERA_CAPTURE_QUALITY_CUSTOM:
+                pictureSize = getBestSize(parameters.getSupportedPictureSizes(), maxWidth, maxHeight);
         }
 
         if (pictureSize != null) {

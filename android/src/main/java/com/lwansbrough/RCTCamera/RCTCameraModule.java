@@ -80,6 +80,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
     public static final String RCT_CAMERA_CAPTURE_QUALITY_HIGH = "high";
     public static final String RCT_CAMERA_CAPTURE_QUALITY_MEDIUM = "medium";
     public static final String RCT_CAMERA_CAPTURE_QUALITY_LOW = "low";
+    public static final String RCT_CAMERA_CAPTURE_QUALITY_CUSTOM = "custom";
     public static final int MEDIA_TYPE_IMAGE = 1;
     public static final int MEDIA_TYPE_VIDEO = 2;
 
@@ -168,6 +169,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                         put("medium", RCT_CAMERA_CAPTURE_QUALITY_MEDIUM);
                         put("high", RCT_CAMERA_CAPTURE_QUALITY_HIGH);
                         put("photo", RCT_CAMERA_CAPTURE_QUALITY_HIGH);
+                        put("custom", RCT_CAMERA_CAPTURE_QUALITY_CUSTOM);
                     }
                 });
             }
@@ -519,7 +521,16 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
             return;
         }
 
-        RCTCamera.getInstance().setCaptureQuality(options.getInt("type"), options.getString("quality"));
+        int maxWidth = Integer.MAX_VALUE;
+        int maxHeight = Integer.MAX_VALUE;
+        if (options.hasKey("maxWidth")) {
+            maxWidth = options.getInt("maxWidth");
+        }
+        if (options.hasKey("maxHeight")) {
+            maxHeight = options.getInt("maxHeight");
+        }
+
+        RCTCamera.getInstance().setCaptureQuality(options.getInt("type"), options.getString("quality"), maxWidth, maxHeight);
 
         if (options.hasKey("playSoundOnCapture") && options.getBoolean("playSoundOnCapture")) {
             MediaActionSound sound = new MediaActionSound();
@@ -527,7 +538,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
         }
 
         if (options.hasKey("quality")) {
-            RCTCamera.getInstance().setCaptureQuality(options.getInt("type"), options.getString("quality"));
+            RCTCamera.getInstance().setCaptureQuality(options.getInt("type"), options.getString("quality"), maxWidth, maxHeight);
         }
 
         final Boolean shouldMirror = options.hasKey("mirrorImage") && options.getBoolean("mirrorImage");
