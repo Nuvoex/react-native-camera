@@ -144,15 +144,15 @@ The type of capture that will be performed by the camera - either a still image 
 
 #### `captureTarget`
 
-Values: `Camera.constants.CaptureTarget.cameraRoll` (default), `Camera.constants.CaptureTarget.disk`, `Camera.constants.CaptureTarget.temp`, `Camera.constants.CaptureTarget.custom`, ~~`Camera.constants.CaptureTarget.memory`~~ (deprecated),
+Values: `Camera.constants.CaptureTarget.cameraRoll` (default), `Camera.constants.CaptureTarget.disk`, `Camera.constants.CaptureTarget.temp`, `Camera.constants.CaptureTarget.custom` (android only), ~~`Camera.constants.CaptureTarget.memory`~~ (deprecated),
 
 This property allows you to specify the target output of the captured image data. By default the image binary is sent back as a base 64 encoded string. The disk output has been shown to improve capture response time, so that is the recommended value. For custom target the directory path and filename must be specified in capture method.
 
 #### `captureQuality`
 
-Values: `Camera.constants.CaptureQuality.high` or `"high"` (default), `Camera.constants.CaptureQuality.medium` or `"medium"`, `Camera.constants.CaptureQuality.low` or `"low"`, `Camera.constants.CaptureQuality.photo` or `"photo"`.
+Values: `Camera.constants.CaptureQuality.high` or `"high"` (default), `Camera.constants.CaptureQuality.medium` or `"medium"`, `Camera.constants.CaptureQuality.low` or `"low"`, `Camera.constants.CaptureQuality.photo` or `"photo"`, `Camera.constants.CaptureQuality.custom` or `"custom"` (android only).
 
-This property allows you to specify the quality output of the captured image or video. By default the quality is set to high.
+This property allows you to specify the quality output of the captured image or video. By default the quality is set to high. For custom quality the maximum width and height of image must be specified in capture method, otherwise it will behave identical to high.
 
 #### `type`
 
@@ -265,6 +265,8 @@ Supported options:
  - `metadata` This is metadata to be added to the captured image.
    - `location` This is the object returned from `navigator.geolocation.getCurrentPosition()` (React Native's geolocation polyfill). It will add GPS metadata to the image.
  - `rotation` This will rotate the image by the number of degrees specified.
+ - `maxWidth` The maximum width allowed for custom capture quality (android only)
+ - `maxHeight` The maximum height allowed for custom capture quality (android only)
 
 The promise will be fulfilled with an object with some of the following properties:
 
